@@ -1,0 +1,13 @@
+package com.kizuna.data_service;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class KizunaDataServiceApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(KizunaDataServiceApplication.class, args);
+	}
+
+}

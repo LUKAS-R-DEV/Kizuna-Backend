@@ -1,0 +1,11 @@
+package Kizuna_core_service.productionOrder.domain;
+
+public enum ProductionOrderStatus {
+    PLANNED,
+    IN_PROGRESS,
+    WAITING_INSPECTION,
+    APPROVED,
+    REJECTED,
+    CANCELLED,
+    FINISHED_BY_TIME
+}

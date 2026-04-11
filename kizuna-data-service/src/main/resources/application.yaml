@@ -1,0 +1,7 @@
+
+spring:
+  application:
+    name: data-service
+
+  profiles:
+    active: dev

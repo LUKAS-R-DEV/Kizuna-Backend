@@ -1,0 +1,20 @@
+package Kizuna_core_service.recipe.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
+import java.util.Set;
+
+public record RecipeUpdateDto(
+        @NotBlank(message = "Name cannot be null or empty")
+        String name,
+        @NotBlank(message = "Description cannot be null or empty")
+        String description,
+        @NotNull(message = "Items cannot be null")
+        Set<RecipeItemRequestDto> items,
+        @NotNull(message = "Estimated product time cannot be null")
+        Long estimatedProductionTime,
+        @NotNull(message = "Product ID cannot be null")
+        Long productId) {
+
+}

@@ -1,0 +1,16 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: audit-service
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/kizuna-audit
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
