@@ -3,17 +3,15 @@ package kizuna.audit.controller;
 import kizuna.audit.domain.Audit;
 import kizuna.audit.repository.AuditRepository;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/audit")
 public class AuditController {
-    private AuditRepository auditRepository;
+
+    private final AuditRepository auditRepository;
 
     public AuditController(AuditRepository auditRepository) {
         this.auditRepository = auditRepository;
@@ -23,18 +21,19 @@ public class AuditController {
     public ResponseEntity<List<Audit>> getAll() {
         return ResponseEntity.ok(auditRepository.findAll());
     }
+
     @GetMapping("/entity/{entity}")
-    public ResponseEntity<Audit> findByEntity(@PathVariable String entity) {
-        return ResponseEntity.ok(auditRepository.findById(entity).orElse(null));
+    public ResponseEntity<List<Audit>> findByEntity(@PathVariable String entity) {
+        return ResponseEntity.ok(auditRepository.findByEntity(entity));
     }
 
     @GetMapping("/entity-id/{id}")
-    public ResponseEntity<Audit> findByEntityId(@PathVariable String id) {
+    public ResponseEntity<List<Audit>> findByEntityId(@PathVariable String id) {
         return ResponseEntity.ok(auditRepository.findByEntityId(id));
     }
-    @GetMapping("/user/{username}")
-    public ResponseEntity<Audit> findByUsername(@PathVariable String username) {
-        return ResponseEntity.ok(auditRepository.findByUsername(username).orElse(null));
-    }
 
+    @GetMapping("/user/{username}")
+    public ResponseEntity<List<Audit>> findByUsername(@PathVariable String username) {
+        return ResponseEntity.ok(auditRepository.findByUsername(username));
+    }
 }

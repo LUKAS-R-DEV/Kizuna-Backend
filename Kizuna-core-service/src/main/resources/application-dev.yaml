@@ -24,3 +24,8 @@ spring:
         resourceserver:
           jwt:
             issuer-uri: http://localhost:8081/realms/seu-realm
+      rabbitmq:
+          host: localhost
+          port: 5672
+          username: guest
+          password: guest

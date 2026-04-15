@@ -9,18 +9,19 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 @Component
-public class AuditConsumer {
+public class DlqReprocessor {
 
     private final AuditRepository auditRepository;
 
-    public AuditConsumer(AuditRepository auditRepository) {
+    public DlqReprocessor(AuditRepository auditRepository) {
         this.auditRepository = auditRepository;
     }
 
-    @RabbitListener(queues = "audit.queue")
-    public void consume(Map<String, Object> event) {
+    @RabbitListener(queues = "audit.dlq")
+    public void reprocess(Map<String, Object> event) {
 
         try {
+            System.out.println("🔁 Tentando reprocessar evento DLQ...");
 
             Audit audit = Audit.builder()
                     .version((String) event.get("version"))
@@ -34,13 +35,10 @@ public class AuditConsumer {
 
             auditRepository.save(audit);
 
-        } catch (Exception e) {
-            throw new RuntimeException("Erro ao processar evento de auditoria", e);
-        }
-    }
+            System.out.println("✅ Evento reprocessado com sucesso!");
 
-    @RabbitListener(queues = "audit.dlq")
-    public void consumeDlq(Map<String, Object> event) {
-        System.err.println("Evento enviado para DLQ: " + event);
+        } catch (Exception e) {
+            System.err.println("❌ Falha ao reprocessar DLQ. Evento descartado: " + event);
+        }
     }
 }

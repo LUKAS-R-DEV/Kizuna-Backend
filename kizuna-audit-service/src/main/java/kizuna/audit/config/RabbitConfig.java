@@ -7,25 +7,44 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitConfig {
 
-    public static final String QUEUE = "audit.queue";
-    public static final String EXCHANGE = "audit.exchange";
-    public static final String ROUTING_KEY = "audit.routing";
-
     @Bean
-    public Queue queue() {
-        return new Queue(QUEUE, true);
+    public Queue auditQueue() {
+        return QueueBuilder.durable("audit.queue")
+                .withArgument("x-dead-letter-exchange", "audit.dlx")
+                .withArgument("x-dead-letter-routing-key", "audit.dlq")
+                .build();
     }
 
     @Bean
-    public TopicExchange exchange() {
-        return new TopicExchange(EXCHANGE);
+    public Queue deadLetterQueue() {
+        return new Queue("audit.dlq");
+    }
+
+
+    @Bean
+    public TopicExchange auditExchange() {
+        return new TopicExchange("audit.exchange");
     }
 
     @Bean
-    public Binding binding(Queue queue, TopicExchange exchange) {
+    public TopicExchange deadLetterExchange() {
+        return new TopicExchange("audit.dlx");
+    }
+
+
+    @Bean
+    public Binding binding() {
         return BindingBuilder
-                .bind(queue)
-                .to(exchange)
-                .with(ROUTING_KEY);
+                .bind(auditQueue())
+                .to(auditExchange())
+                .with("audit.key");
+    }
+
+    @Bean
+    public Binding dlqBinding() {
+        return BindingBuilder
+                .bind(deadLetterQueue())
+                .to(deadLetterExchange())
+                .with("audit.dlq");
     }
 }

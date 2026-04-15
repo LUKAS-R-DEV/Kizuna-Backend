@@ -8,6 +8,7 @@
         <option value="$PROJECT_DIR$/kizuna-iam-service/pom.xml" />
         <option value="$PROJECT_DIR$/kizuna-data-service/pom.xml" />
         <option value="$PROJECT_DIR$/kizuna-audit-service/pom.xml" />
+        <option value="$PROJECT_DIR$/Kizuna-core-service/pom.xml" />
       </list>
     </option>
   </component>
