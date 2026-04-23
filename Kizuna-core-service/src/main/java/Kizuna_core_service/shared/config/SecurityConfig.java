@@ -29,11 +29,10 @@ public class SecurityConfig {
 
                         // 🔹 Acesso por Roles - Remova o prefixo "/core" de todos
                         .requestMatchers("/auth/**", "/users/**").hasRole("ACCESS_MANAGER")
-                        .requestMatchers("/recipes/**").hasRole("PLANNER")
-                        .requestMatchers("/qualityInspection/**").hasRole("INSPECTOR")
-
-                        // AGORA O EXECUTIVO VAI SER BARRADO AQUI:
-                        .requestMatchers("/inventory/**", "/inventoryMovement/**").hasRole("INVENTORY_MANAGER")
+                        .requestMatchers("/recipes/**").hasAnyRole("PLANNER", "EXECUTIVE", "OPERATOR")
+                        .requestMatchers("/quality-inspection/**").hasAnyRole("INSPECTOR", "EXECUTIVE")
+                        .requestMatchers("/production-order/**").hasAnyRole("PLANNER", "OPERATOR", "EXECUTIVE","INSPECTOR")
+                        .requestMatchers("/inventory/**", "/inventory-movement/**").hasAnyRole("INVENTORY_MANAGER", "EXECUTIVE","PLANNER")
 
                         .requestMatchers("/dashboard/**", "/report/**").hasRole("EXECUTIVE")
                         .requestMatchers("/admin/**").hasRole("ADMIN")

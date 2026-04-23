@@ -1,5 +1,6 @@
 package Kizuna_core_service.inventory.dto;
 
+import Kizuna_core_service.inventory.domain.Type;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -18,6 +19,8 @@ public record InventoryRequestDto(
         @NotNull(message = "minStock is required")
         @Min(value = 0, message = "quantity must be positive or zero")
         Double minStock,
+        @NotNull(message = "type is required")
+        Type type,
         @NotNull(message = "supplier is required")
         String supplier ) {
 }

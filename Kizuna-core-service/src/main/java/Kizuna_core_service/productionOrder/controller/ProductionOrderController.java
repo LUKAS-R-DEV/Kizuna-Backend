@@ -4,6 +4,7 @@ import Kizuna_core_service.productionOrder.domain.ProductionOrderStatus;
 import Kizuna_core_service.productionOrder.dto.ProductionOrderRequestDto;
 import Kizuna_core_service.productionOrder.dto.ProductionOrderResponseDto;
 import Kizuna_core_service.productionOrder.service.ProductionOrderService;
+import Kizuna_core_service.shared.dto.ApiResponseGeneric;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,15 +20,25 @@ public class ProductionOrderController {
     public ProductionOrderController(ProductionOrderService productionOrderService) {
         this.productionOrderService = productionOrderService;
     }
-    @PreAuthorize("hasRole('PLANNER')")
+    @PreAuthorize("hasAnyRole('PLANNER','OPERATOR','EXECUTIVE')")
     @GetMapping
     public List<ProductionOrderResponseDto> findAll(){
         return productionOrderService.findAll();
     }
+
+    @PreAuthorize("hasRole('PLANNER')")
     @GetMapping("/status/{status}")
-    public List<ProductionOrderResponseDto> findByStatus(ProductionOrderStatus status){
+    public List<ProductionOrderResponseDto> findByStatus(@PathVariable ProductionOrderStatus status){
         return productionOrderService.findByStatus(status);
     }
+
+    @PreAuthorize("hasRole('PLANNER')")
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductionOrderResponseDto> findById(@PathVariable Long id){
+        return ResponseEntity.ok(productionOrderService.findById(id));
+    }
+
+
     @PreAuthorize("hasRole('PLANNER')")
     @PostMapping
     public ResponseEntity<ProductionOrderResponseDto> create(@Valid @RequestBody ProductionOrderRequestDto requestDto){
@@ -41,6 +52,28 @@ public class ProductionOrderController {
         return ResponseEntity.ok(productionOrderResponseDto);
     }
     @PreAuthorize("hasRole('OPERATOR')")
+    @PostMapping("/{id}/pause")
+    public ResponseEntity<ApiResponseGeneric> pause(@PathVariable Long id){
+        ApiResponseGeneric apiResponseGeneric = productionOrderService.pause(id);
+        return ResponseEntity.ok(apiResponseGeneric);
+    }
+
+
+    @PreAuthorize("hasRole('OPERATOR')")
+    @PostMapping("/{id}/rework")
+    public ResponseEntity<ApiResponseGeneric> rework(@PathVariable Long id){;
+        ApiResponseGeneric apiResponseGeneric=productionOrderService.reworkProductionOrder(id);
+        return ResponseEntity.ok(apiResponseGeneric);
+
+    }
+    @PreAuthorize("hasRole('INSPECTOR')")
+    @GetMapping("/status/WAITING_INSPECTION")
+    public List<ProductionOrderResponseDto> findByStatusWaitingInspection(){
+        return productionOrderService.findByStatus(ProductionOrderStatus.WAITING_INSPECTION);
+    }
+
+
+    @PreAuthorize("hasRole('OPERATOR')")
     @PostMapping("/{id}/finish")
     public ResponseEntity<ProductionOrderResponseDto> finish(@PathVariable Long id){
         ProductionOrderResponseDto productionOrderResponseDto = productionOrderService.finish(id);
@@ -52,7 +85,7 @@ public class ProductionOrderController {
         ProductionOrderResponseDto productionOrderResponseDto = productionOrderService.cancel(id);
         return ResponseEntity.ok(productionOrderResponseDto);
     }
-    @PreAuthorize("hasRole('PLANNER')")
+    @PreAuthorize("hasAnyRole('PLANNER','EXECUTIVE')")
     @GetMapping("/queue")
     public List<ProductionOrderResponseDto> getQueue(){
         return productionOrderService.findByStatus(ProductionOrderStatus.PLANNED);

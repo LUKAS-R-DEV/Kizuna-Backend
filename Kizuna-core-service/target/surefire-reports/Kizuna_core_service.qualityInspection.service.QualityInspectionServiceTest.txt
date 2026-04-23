@@ -1,0 +1,13 @@
+-------------------------------------------------------------------------------
+Test set: Kizuna_core_service.qualityInspection.service.QualityInspectionServiceTest
+-------------------------------------------------------------------------------
+Tests run: 10, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.106 s <<< FAILURE! -- in Kizuna_core_service.qualityInspection.service.QualityInspectionServiceTest
+Kizuna_core_service.qualityInspection.service.QualityInspectionServiceTest.shouldRejectOrderWhenReworkCountExceedsLimit -- Time elapsed: 0.004 s <<< FAILURE!
+Wanted but not invoked:
+productionOrderService.reorderQueue();
+-> at Kizuna_core_service.productionOrder.service.ProductionOrderService.reorderQueue(ProductionOrderService.java:234)
+Actually, there were zero interactions with this mock.
+
+	at Kizuna_core_service.productionOrder.service.ProductionOrderService.reorderQueue(ProductionOrderService.java:234)
+	at Kizuna_core_service.qualityInspection.service.QualityInspectionServiceTest.shouldRejectOrderWhenReworkCountExceedsLimit(QualityInspectionServiceTest.java:230)
+

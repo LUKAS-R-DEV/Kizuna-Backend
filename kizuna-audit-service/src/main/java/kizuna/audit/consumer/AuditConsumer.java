@@ -1,11 +1,12 @@
 package kizuna.audit.consumer;
 
 import kizuna.audit.domain.Audit;
+import kizuna.audit.dto.AuditEventDto;
 import kizuna.audit.repository.AuditRepository;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 @Component
@@ -18,29 +19,24 @@ public class AuditConsumer {
     }
 
     @RabbitListener(queues = "audit.queue")
-    public void consume(Map<String, Object> event) {
-
+    public void consume(@Payload AuditEventDto event) {
         try {
-
             Audit audit = Audit.builder()
-                    .version((String) event.get("version"))
-                    .action((String) event.get("action"))
-                    .entity((String) event.get("entity"))
-                    .entityId((String) event.get("entityId"))
-                    .username((String) event.get("username"))
-                    .timestamp(LocalDateTime.parse((String) event.get("timestamp")))
-                    .details((Map<String, Object>) event.get("data"))
+                    .action(event.action())
+                    .entity(event.entity())
+                    .entityId(event.entityId())
+                    .username(event.username())
+                    .userId(event.userId())
+                    .timestamp(event.timestamp())
+                    .details((Map<String, Object>) event.data())
                     .build();
 
             auditRepository.save(audit);
+            System.out.println("Evento salvo: " + audit);
 
         } catch (Exception e) {
             throw new RuntimeException("Erro ao processar evento de auditoria", e);
         }
     }
 
-    @RabbitListener(queues = "audit.dlq")
-    public void consumeDlq(Map<String, Object> event) {
-        System.err.println("Evento enviado para DLQ: " + event);
-    }
 }

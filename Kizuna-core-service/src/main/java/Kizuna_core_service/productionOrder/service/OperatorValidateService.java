@@ -20,7 +20,7 @@ public class OperatorValidateService {
             throw new NotFoundException("User not found");
 
         }
-        if(!user.roles().contains("OPERATOR")){
+        if(user.roles() == null || !user.roles().contains("OPERATOR")){
             throw new BusinessException("User is not an operator");
         }
         return user;

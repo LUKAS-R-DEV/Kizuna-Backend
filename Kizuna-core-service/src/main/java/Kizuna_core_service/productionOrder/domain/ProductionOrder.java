@@ -22,7 +22,7 @@ public class ProductionOrder {
     private String operatorName;
     private String operatorId;
     private LocalDateTime endTime;
-    private Boolean inspection=false;
+    private Integer reworkCount=0;
     private String createdBy;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

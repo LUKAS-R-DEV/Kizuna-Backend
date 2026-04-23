@@ -6,5 +6,6 @@
     <file url="file://$PROJECT_DIR$/kizuna-audit-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/kizuna-data-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/kizuna-iam-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/kizuna_notification_service/src/main/java" charset="UTF-8" />
   </component>
 </project>

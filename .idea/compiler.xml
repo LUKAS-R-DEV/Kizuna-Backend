@@ -3,26 +3,6 @@
   <component name="CompilerConfiguration">
     <annotationProcessing>
       <profile default="true" name="Default" enabled="true" />
-      <profile name="Annotation profile for kizuna-audit-service" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.44/lombok-1.18.44.jar" />
-        </processorPath>
-        <module name="kizuna-audit-service" />
-      </profile>
-      <profile name="Annotation profile for kizuna-iam-service" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="false">
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.44/lombok-1.18.44.jar" />
-          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.44/lombok-1.18.44.jar" />
-        </processorPath>
-        <module name="kizuna-data-service" />
-        <module name="kizuna-iam-service" />
-      </profile>
       <profile name="Annotation profile for Kizuna-core-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
@@ -32,6 +12,18 @@
         </processorPath>
         <module name="Kizuna-core-service" />
       </profile>
+      <profile name="Annotation profile for kizuna_notification_service" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.44/lombok-1.18.44.jar" />
+        </processorPath>
+        <module name="kizuna-audit-service" />
+        <module name="kizuna_notification_service" />
+        <module name="kizuna-data-service" />
+        <module name="kizuna-iam-service" />
+      </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
@@ -40,6 +32,7 @@
       <module name="kizuna-audit-service" options="-parameters" />
       <module name="kizuna-data-service" options="-parameters" />
       <module name="kizuna-iam-service" options="-parameters" />
+      <module name="kizuna_notification_service" options="-parameters" />
     </option>
   </component>
 </project>

@@ -1,35 +1,33 @@
 package kizuna.audit.service;
 
 import kizuna.audit.domain.Audit;
-import kizuna.audit.dto.AuditEventDto;
 import kizuna.audit.repository.AuditRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.Map;
 
 @Service
 public class AuditService {
 
     private final AuditRepository auditRepository;
 
-
     public AuditService(AuditRepository auditRepository) {
         this.auditRepository = auditRepository;
     }
 
-    public void saveAudit(AuditEventDto auditEventDto) {
-        Audit log= Audit.builder()
-                .action(auditEventDto.action())
-                .details(auditEventDto.details())
-                .username(auditEventDto.username())
-                .entity(auditEventDto.entity())
-                .entityId(auditEventDto.entityId())
-                .timestamp(auditEventDto.timestamp())
-                .userId(auditEventDto.userId())
+    public void saveAudit(Map<String, Object> event) {
+
+        Audit log = Audit.builder()
+                .action((String) event.get("action"))
+                .entity((String) event.get("entity"))
+                .entityId((String) event.get("entityId"))
+                .username((String) event.get("username"))
+                .userId((String) event.get("userId"))
+                .timestamp(LocalDateTime.parse((String) event.get("timestamp")))
+                .details((Map<String, Object>) event.get("data"))
                 .build();
 
+        auditRepository.save(log);
     }
-
-
-
-
 }

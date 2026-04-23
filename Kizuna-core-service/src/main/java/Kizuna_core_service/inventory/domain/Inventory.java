@@ -2,6 +2,7 @@ package Kizuna_core_service.inventory.domain;
 
 import Kizuna_core_service.shared.exception.BusinessException;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Entity
@@ -20,19 +21,12 @@ public class Inventory {
     private String supplier;
     @Enumerated(EnumType.STRING)
     private Status status;
+    @Enumerated(EnumType.STRING)
+    private Type type;
     private Boolean active=true;
 
-
-    public void addStock(Double quantity){
-        this.quantity+=quantity;
-    }
-    public void removeStock(Double quantity){
-        if (this.quantity < quantity) {
-            throw new BusinessException("Not enough stock");
-        }
-        this.quantity -= quantity;
-        updateStatus();
-    }
+    @PrePersist
+    @PreUpdate
    public void updateStatus(){
         if(this.quantity <= this.minStock){
             this.status=Status.CRITICAL;

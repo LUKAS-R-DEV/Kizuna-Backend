@@ -1,0 +1,126 @@
+-------------------------------------------------------------------------------
+Test set: Kizuna_core_service.productionOrder.service.ProductionOrderServiceTest
+-------------------------------------------------------------------------------
+Tests run: 19, Failures: 5, Errors: 2, Skipped: 0, Time elapsed: 0.236 s <<< FAILURE! -- in Kizuna_core_service.productionOrder.service.ProductionOrderServiceTest
+Kizuna_core_service.productionOrder.service.ProductionOrderServiceTest.shouldThrowExceptionWhenMovingNonExistentOrder -- Time elapsed: 0.149 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expecting actual throwable to be an instance of:
+  Kizuna_core_service.shared.exception.NotFoundException
+but was:
+  java.lang.UnsupportedOperationException
+	at java.base/java.util.ImmutableCollections.uoe(ImmutableCollections.java:142)
+	at java.base/java.util.ImmutableCollections$AbstractImmutableList.sort(ImmutableCollections.java:263)
+	at Kizuna_core_service.productionOrder.service.ProductionOrderService.moveOrder(ProductionOrderService.java:195)
+	...(87 remaining lines not displayed - this can be changed with Assertions.setMaxStackTraceElementsDisplayed)
+	at Kizuna_core_service.productionOrder.service.ProductionOrderServiceTest.shouldThrowExceptionWhenMovingNonExistentOrder(ProductionOrderServiceTest.java:419)
+
+Kizuna_core_service.productionOrder.service.ProductionOrderServiceTest.shouldCancelProductionOrderSuccessfully -- Time elapsed: 0.016 s <<< FAILURE!
+org.mockito.exceptions.verification.TooManyActualInvocations: 
+
+eventPublisher.publish(
+    <any string>,
+    <any string>,
+    <any string>,
+    <any>,
+    <any>,
+    <any map>
+);
+Wanted 2 times:
+-> at Kizuna_core_service.shared.messaging.EventPublisher.publish(EventPublisher.java:27)
+But was 3 times:
+-> at Kizuna_core_service.productionOrder.service.ProductionOrderService.reorderQueue(ProductionOrderService.java:244)
+-> at Kizuna_core_service.productionOrder.service.ProductionOrderService.cancel(ProductionOrderService.java:186)
+-> at Kizuna_core_service.productionOrder.service.ProductionOrderService.cancel(ProductionOrderService.java:187)
+
+
+	at Kizuna_core_service.shared.messaging.EventPublisher.publish(EventPublisher.java:27)
+	at Kizuna_core_service.productionOrder.service.ProductionOrderServiceTest.shouldCancelProductionOrderSuccessfully(ProductionOrderServiceTest.java:313)
+
+Kizuna_core_service.productionOrder.service.ProductionOrderServiceTest.shouldStartProductionOrderSuccessfully -- Time elapsed: 0.006 s <<< FAILURE!
+org.mockito.exceptions.verification.TooManyActualInvocations: 
+
+eventPublisher.publish(
+    <any string>,
+    <any string>,
+    <any string>,
+    <any>,
+    <any>,
+    <any map>
+);
+Wanted 2 times:
+-> at Kizuna_core_service.shared.messaging.EventPublisher.publish(EventPublisher.java:27)
+But was 3 times:
+-> at Kizuna_core_service.productionOrder.service.ProductionOrderService.reorderQueue(ProductionOrderService.java:244)
+-> at Kizuna_core_service.productionOrder.service.ProductionOrderService.start(ProductionOrderService.java:130)
+-> at Kizuna_core_service.productionOrder.service.ProductionOrderService.start(ProductionOrderService.java:131)
+
+
+	at Kizuna_core_service.shared.messaging.EventPublisher.publish(EventPublisher.java:27)
+	at Kizuna_core_service.productionOrder.service.ProductionOrderServiceTest.shouldStartProductionOrderSuccessfully(ProductionOrderServiceTest.java:226)
+
+Kizuna_core_service.productionOrder.service.ProductionOrderServiceTest.shouldCreateProductionOrderSuccessfully -- Time elapsed: 0.005 s <<< FAILURE!
+org.mockito.exceptions.verification.TooManyActualInvocations: 
+
+eventPublisher.publish(
+    <any string>,
+    <any string>,
+    <any string>,
+    <any>,
+    <any>,
+    <any map>
+);
+Wanted 2 times:
+-> at Kizuna_core_service.shared.messaging.EventPublisher.publish(EventPublisher.java:27)
+But was 3 times:
+-> at Kizuna_core_service.productionOrder.service.ProductionOrderService.reorderQueue(ProductionOrderService.java:244)
+-> at Kizuna_core_service.productionOrder.service.ProductionOrderService.create(ProductionOrderService.java:88)
+-> at Kizuna_core_service.productionOrder.service.ProductionOrderService.create(ProductionOrderService.java:89)
+
+
+	at Kizuna_core_service.shared.messaging.EventPublisher.publish(EventPublisher.java:27)
+	at Kizuna_core_service.productionOrder.service.ProductionOrderServiceTest.shouldCreateProductionOrderSuccessfully(ProductionOrderServiceTest.java:198)
+
+Kizuna_core_service.productionOrder.service.ProductionOrderServiceTest.shouldHandleReworkProductionOrderSuccessfully -- Time elapsed: 0.006 s <<< FAILURE!
+org.mockito.exceptions.verification.TooManyActualInvocations: 
+
+eventPublisher.publish(
+    <any string>,
+    <any string>,
+    <any string>,
+    <any>,
+    <any>,
+    <any map>
+);
+Wanted 2 times:
+-> at Kizuna_core_service.shared.messaging.EventPublisher.publish(EventPublisher.java:27)
+But was 3 times:
+-> at Kizuna_core_service.productionOrder.service.ProductionOrderService.reorderQueue(ProductionOrderService.java:244)
+-> at Kizuna_core_service.productionOrder.service.ProductionOrderService.reworkProductionOrder(ProductionOrderService.java:154)
+-> at Kizuna_core_service.productionOrder.service.ProductionOrderService.reworkProductionOrder(ProductionOrderService.java:155)
+
+
+	at Kizuna_core_service.shared.messaging.EventPublisher.publish(EventPublisher.java:27)
+	at Kizuna_core_service.productionOrder.service.ProductionOrderServiceTest.shouldHandleReworkProductionOrderSuccessfully(ProductionOrderServiceTest.java:356)
+
+Kizuna_core_service.productionOrder.service.ProductionOrderServiceTest.shouldThrowExceptionWhenRawMaterialStockInsufficient -- Time elapsed: 0.003 s <<< ERROR!
+org.mockito.exceptions.misusing.UnnecessaryStubbingException: 
+
+Unnecessary stubbings detected.
+Clean & maintainable test code requires zero unnecessary code.
+Following stubbings are unnecessary (click to navigate to relevant line of code):
+  1. -> at Kizuna_core_service.productionOrder.service.ProductionOrderServiceTest.shouldThrowExceptionWhenRawMaterialStockInsufficient(ProductionOrderServiceTest.java:265)
+Please remove unnecessary stubbings or use 'lenient' strictness. More info: javadoc for UnnecessaryStubbingException class.
+	at org.mockito.junit.jupiter.MockitoExtension.lambda$afterEach$2(MockitoExtension.java:200)
+	at java.base/java.util.Optional.ifPresent(Optional.java:178)
+	at org.mockito.junit.jupiter.MockitoExtension.afterEach(MockitoExtension.java:198)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+Kizuna_core_service.productionOrder.service.ProductionOrderServiceTest.shouldReorderQueueSuccessfully -- Time elapsed: 0.003 s <<< ERROR!
+java.lang.UnsupportedOperationException
+	at java.base/java.util.ImmutableCollections.uoe(ImmutableCollections.java:142)
+	at java.base/java.util.ImmutableCollections$AbstractImmutableList.sort(ImmutableCollections.java:263)
+	at Kizuna_core_service.productionOrder.service.ProductionOrderService.moveOrder(ProductionOrderService.java:195)
+	at Kizuna_core_service.productionOrder.service.ProductionOrderServiceTest.shouldReorderQueueSuccessfully(ProductionOrderServiceTest.java:401)
+

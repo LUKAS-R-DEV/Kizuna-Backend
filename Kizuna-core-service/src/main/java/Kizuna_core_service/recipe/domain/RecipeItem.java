@@ -18,5 +18,5 @@ public class RecipeItem {
     @ManyToOne
     @JoinColumn(name = "inventory_id")
     private Inventory inventory;
-    private double quantity;
+    private Double quantity;
 }

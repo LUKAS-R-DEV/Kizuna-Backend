@@ -2,6 +2,8 @@ package Kizuna_core_service.inventory_movement.domain;
 
 import Kizuna_core_service.inventory.domain.Inventory;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -11,7 +13,8 @@ import java.time.LocalDateTime;
 @Table(name = "inventory_movements")
 @Data
 @NoArgsConstructor
-
+@AllArgsConstructor
+@Builder
 public class InventoryMovement {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

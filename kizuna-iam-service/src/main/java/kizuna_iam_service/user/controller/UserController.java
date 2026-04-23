@@ -60,7 +60,16 @@ public class UserController {
         User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not found"));
         return ResponseEntity.ok(userResponseDto(user));
     }
+    @GetMapping("/allOperators")
+    public ResponseEntity<List<UserResponseDto>> getAllOperators() {
+        List<User> operators = userRepository.findAllByRolesContaining("OPERATOR");
+        return ResponseEntity.ok(operators.stream().map(this::userResponseDto).toList());
+    }
+
+
     private final UserResponseDto userResponseDto(User user) {
         return new UserResponseDto(user.getKeycloakId(), user.getUsername(), user.getFullName(), user.getEmail(), user.getRoles());
     }
+
+
 }

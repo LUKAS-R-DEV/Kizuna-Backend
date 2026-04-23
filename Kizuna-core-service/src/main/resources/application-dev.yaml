@@ -18,14 +18,28 @@ spring:
         default_schema: core
 
 
-  spring:
-    security:
-      oauth2:
-        resourceserver:
-          jwt:
-            issuer-uri: http://localhost:8081/realms/seu-realm
-      rabbitmq:
-          host: localhost
-          port: 5672
-          username: guest
-          password: guest
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8081/realms/Kizuna
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+    resilience4j:
+      circuitbreaker:
+        instances:
+          iamService:
+            slidingWindowSize: 10
+            failureRateThreshold: 50
+            waitDurationInOpenState: 10s
+            permittedNumberOfCallsInHalfOpenState: 3
+
+      timelimiter:
+        instances:
+          iamService:
+            timeoutDuration: 3s

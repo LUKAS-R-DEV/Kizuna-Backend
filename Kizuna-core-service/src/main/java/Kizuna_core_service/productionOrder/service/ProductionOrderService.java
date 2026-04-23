@@ -1,15 +1,16 @@
 package Kizuna_core_service.productionOrder.service;
 
 import Kizuna_core_service.inventory.domain.Inventory;
-import Kizuna_core_service.inventory.repository.InventoryRepository;
+import Kizuna_core_service.inventory.domain.Type;
+import Kizuna_core_service.inventory.service.InventoryService;
 import Kizuna_core_service.inventory_movement.domain.InventoryMovement;
-import Kizuna_core_service.inventory_movement.domain.MovementType;
-import Kizuna_core_service.inventory_movement.repository.InventoryMovementRepository;
 import Kizuna_core_service.productionOrder.domain.ProductionOrder;
 import Kizuna_core_service.productionOrder.domain.ProductionOrderStatus;
 import Kizuna_core_service.productionOrder.dto.ProductionOrderRequestDto;
 import Kizuna_core_service.productionOrder.dto.ProductionOrderResponseDto;
-import Kizuna_core_service.productionOrder.messaging.ProductionEventPublisher;
+import Kizuna_core_service.shared.dto.ApiResponseGeneric;
+import Kizuna_core_service.shared.integration.KeycloakValidation;
+import Kizuna_core_service.shared.messaging.EventPublisher;
 import Kizuna_core_service.productionOrder.repository.ProductionOrderRepository;
 import Kizuna_core_service.recipe.domain.Recipe;
 import Kizuna_core_service.recipe.domain.RecipeItem;
@@ -17,8 +18,11 @@ import Kizuna_core_service.recipe.repository.RecipeRepository;
 import Kizuna_core_service.shared.exception.BusinessException;
 import Kizuna_core_service.shared.exception.NotFoundException;
 import Kizuna_core_service.shared.integration.UserResponseDto;
+import Kizuna_core_service.shared.messaging.EventTopics;
 import Kizuna_core_service.shared.util.SecurityUtils;
 import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
+import org.springframework.jmx.export.notification.NotificationPublisher;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -26,25 +30,19 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 @Service
-
+@AllArgsConstructor
 public class ProductionOrderService {
     private final ProductionOrderRepository productionOrderRepository;
     private final RecipeRepository recipeRepository;
-    private final InventoryRepository inventoryRepository;
-    private final InventoryMovementRepository inventoryMovementRepository;
-    private final ProductionEventPublisher publisher;
+    private final EventPublisher eventPublisher;
+    private final InventoryService inventoryService;
     private final OperatorValidateService operatorValidateService;
+    private final ProductionOrderCalculate productionOrderCalculate;
 
-    public ProductionOrderService(ProductionOrderRepository productionOrderRepository, RecipeRepository recipeRepository, InventoryRepository inventoryRepository, InventoryMovementRepository inventoryMovementRepository, ProductionEventPublisher publisher, OperatorValidateService operatorValidateService) {
-        this.productionOrderRepository = productionOrderRepository;
-        this.recipeRepository = recipeRepository;
-        this.inventoryRepository = inventoryRepository;
-        this.inventoryMovementRepository = inventoryMovementRepository;
-        this.publisher = publisher;
-        this.operatorValidateService = operatorValidateService;
-    }
+
 
     public List<ProductionOrderResponseDto> findAll() {
         Boolean isAdmin = SecurityUtils.getRoles().contains("ADMIN");
@@ -69,7 +67,7 @@ public class ProductionOrderService {
     @Transactional
     public ProductionOrderResponseDto create(ProductionOrderRequestDto requestDto) {
 
-        Recipe recipe = recipeRepository.findById(requestDto.recipeId()).orElseThrow(() -> new NotFoundException("Recipe not found"));
+        Recipe recipe = recipeRepository.findByIdAndActiveTrue(requestDto.recipeId()).orElseThrow(() -> new NotFoundException("Recipe not found"));
         ProductionOrder productionOrder = new ProductionOrder();
         productionOrder.setQuantityToProduce(requestDto.quantityToProduce());
         productionOrder.setStatus(ProductionOrderStatus.PLANNED);
@@ -82,18 +80,28 @@ public class ProductionOrderService {
         productionOrder.setOperatorName(operator.username());
         System.out.println(operator.username());
         System.out.println(operator.keycloakId());
-        productionOrder.setEstimatedTotalTime(productionOrder.getQuantityToProduce() * recipe.getEstimatedProductionTime());
+        Long estimatedTime = 0L;
+        if (recipe.getEstimatedProductionTime() != null) {
+            estimatedTime = productionOrder.getQuantityToProduce() * recipe.getEstimatedProductionTime();
+        }
+        productionOrder.setEstimatedTotalTime(estimatedTime);
         productionOrderRepository.save(productionOrder);
         reorderQueue();
-        publisher.sendEvent(productionOrder.getId(), productionOrder.getRecipe().getName(), "PLANNED");
+
+        eventPublisher.publish(EventTopics.PRODUCTION_CREATED, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("recipeName", productionOrder.getRecipe().getName(), "status", "PLANNED"));
+        eventPublisher.publish(EventTopics.AUDIT, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("action", "CREATE", "recipeName", recipe.getName()));
+
+        // 🔔 NOTIFICA O OPERADOR
+        eventPublisher.publish(EventTopics.NOTIFICATION, "NOTIFICATION", productionOrder.getOperatorId(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("eventType", "event.production.created", "userId", productionOrder.getOperatorId(), "title", "Nova Ordem de Produção", "message", "Você foi designado para produzir: " + recipe.getName()));
+
         return productionOrderResponseDto(productionOrder);
     }
 
     @Transactional
     public ProductionOrderResponseDto start(Long id) {
         ProductionOrder productionOrder = productionOrderRepository.findById(id).orElseThrow(() -> new NotFoundException("Production order not found"));
-        if (!productionOrder.getStatus().equals(ProductionOrderStatus.PLANNED)) {
-            throw new BusinessException("Production order is not planned");
+        if (!(productionOrder.getStatus().equals(ProductionOrderStatus.PLANNED) || productionOrder.getStatus().equals(ProductionOrderStatus.PAUSED))) {
+            throw new BusinessException("Production order is not planned or paused");
         }
         Recipe recipe = productionOrder.getRecipe();
 
@@ -109,29 +117,77 @@ public class ProductionOrderService {
             if (inventory.getQuantity() < consumption) {
                 throw new BusinessException("Not enough stock for item " + inventory.getName());
             }
+            if(!inventory.getType().equals(Type.RAW)){
+                throw new BusinessException("Inventory is not raw");
+            }
         }
         for (RecipeItem item : recipe.getItems()) {
             Inventory inventory = item.getInventory();
             Double consumption = item.getQuantity() * productionOrder.getQuantityToProduce();
-            inventory.removeStock(consumption);
             String reason = "Production order ID: " + productionOrder.getId();
-            InventoryMovement inventoryMovement = new InventoryMovement(inventory, consumption, reason, MovementType.EXIT);
-            movements.add(inventoryMovement);
+            inventoryService.consume(inventory.getId(), consumption,reason);
             inventoriesToUpdate.add(inventory);
         }
         productionOrder.setStatus(ProductionOrderStatus.IN_PROGRESS);
-        productionOrder.setStartTime(LocalDateTime.now());
 
-        inventoryRepository.saveAll(inventoriesToUpdate);
-        inventoryMovementRepository.saveAll(movements);
+        if(productionOrder.getStartTime()==null){
+            productionOrder.setStartTime(LocalDateTime.now());
+
+        }
         productionOrderRepository.save(productionOrder);
         reorderQueue();
-        publisher.sendEvent(productionOrder.getId(), productionOrder.getRecipe().getName(), "START");
+        eventPublisher.publish(EventTopics.PRODUCTION_STARTED, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("recipeName", productionOrder.getRecipe().getName(), "status", "START"));
+        eventPublisher.publish(EventTopics.AUDIT, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("action", "START", "recipeName", recipe.getName()));
+        eventPublisher.publish(EventTopics.NOTIFICATION, "NOTIFICATION", productionOrder.getOperatorId(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("eventType", "event.production.started",  "title", "Ordem de Produção Iniciada", "message", "A ordem de produção foi iniciada: " + productionOrder.getRecipe().getName(),"targetRole", "PLANNER"));
         return productionOrderResponseDto(productionOrder);
 
+    }
+    @Transactional
+    public ApiResponseGeneric pause(Long id){
+        ProductionOrder productionOrder = productionOrderRepository.findById(id).orElseThrow(() -> new NotFoundException("Production order not found"));
 
+        if(!productionOrder.getStatus().equals(ProductionOrderStatus.IN_PROGRESS)){
+            throw new BusinessException("Production order must be IN_PROGRESS to pause");
+        }
 
+        if(!SecurityUtils.getUserId().equals(productionOrder.getOperatorId())){
+            throw new BusinessException("You are not the operator of this production order");
+        }
+        productionOrder.setStatus(ProductionOrderStatus.PAUSED);
+        productionOrderRepository.save(productionOrder);
+        reorderQueue();
+        eventPublisher.publish(EventTopics.PRODUCTION_PAUSED, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("recipeName", productionOrder.getRecipe().getName(), "status", "PAUSED"));
+        eventPublisher.publish(EventTopics.AUDIT, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("action", "PAUSE", "recipeName", productionOrder.getRecipe().getName()));
+        eventPublisher.publish(EventTopics.NOTIFICATION, "NOTIFICATION", productionOrder.getOperatorId(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("eventType", "event.production.paused",  "title", "Ordem de Produção Pausada", "message", "A ordem de produção foi pausada: " + productionOrder.getRecipe().getName(),"targetRole", "PLANNER"));
+        return new ApiResponseGeneric("Production order paused successfully",LocalDateTime.now());
 
+    }
+
+    @Transactional
+    public ApiResponseGeneric  reworkProductionOrder(Long id){
+        ProductionOrder productionOrder = productionOrderRepository.findById(id).orElseThrow(() -> new NotFoundException("Production order not found"));
+
+        if(!productionOrder.getStatus().equals(ProductionOrderStatus.REWORK)){
+            throw new BusinessException("Production order must be REWORK to rework");
+        }
+
+        if(productionOrder.getReworkCount() != null && productionOrder.getReworkCount() >= 1){
+            throw new BusinessException("Production order already reworked");
+        }
+        productionOrder.setStatus(ProductionOrderStatus.IN_PROGRESS);
+        if(productionOrder.getStartTime() == null){
+            productionOrder.setStartTime(LocalDateTime.now());
+        }
+        Integer reworkCount = productionOrder.getReworkCount() == null ? 1 : productionOrder.getReworkCount() + 1;
+        productionOrder.setReworkCount(reworkCount);
+
+        productionOrderRepository.save(productionOrder);
+        reorderQueue();
+        eventPublisher.publish(EventTopics.PRODUCTION_REWORK, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("recipeName", productionOrder.getRecipe().getName(), "status", "REWORK"));
+        eventPublisher.publish(EventTopics.AUDIT, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("action", "REWORK", "recipeName", productionOrder.getRecipe().getName()));
+        eventPublisher.publish(EventTopics.NOTIFICATION, "NOTIFICATION", productionOrder.getOperatorId(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("eventType", "event.production.rework", "title", "Ordem de Produção Reexecutada", "message", "A ordem de produção foi reexecutada: " + productionOrder.getRecipe().getName(),"targetRole", "PLANNER"));
+
+        return apiResponseGeneric("Production order rework started");
     }
 
     @Transactional
@@ -143,7 +199,10 @@ public class ProductionOrderService {
         productionOrder.setStatus(ProductionOrderStatus.WAITING_INSPECTION);
         productionOrder.setEndTime(LocalDateTime.now());
         productionOrderRepository.save(productionOrder);
-        publisher.sendEvent(productionOrder.getId(), productionOrder.getRecipe().getName(), "FINISH");
+        eventPublisher.publish(EventTopics.PRODUCTION_FINISHED, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("recipeName", productionOrder.getRecipe().getName(), "status", "FINISH"));
+        eventPublisher.publish(EventTopics.AUDIT, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("action", "FINISH", "recipeName", productionOrder.getRecipe().getName()));
+        eventPublisher.publish(EventTopics.NOTIFICATION, "NOTIFICATION", productionOrder.getOperatorId(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("eventType", "event.production.finished", "title", "Ordem de Produção Finalizada", "message", "A ordem de produção foi finalizada: " + productionOrder.getRecipe().getName(),"targetRole", "PLANNER"));
+        eventPublisher.publish(EventTopics.NOTIFICATION, "NOTIFICATION", productionOrder.getCreatedBy(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("eventType", "event.production.finished","title", "Ordem de Produção Aguardando inspeção", "message", "A ordem de produção foi finalizada: " + productionOrder.getRecipe().getName(),"targetRole", "INSPECTOR"));
         return productionOrderResponseDto(productionOrder);
     }
 
@@ -153,11 +212,16 @@ public class ProductionOrderService {
         if (productionOrder.getStatus().equals(ProductionOrderStatus.WAITING_INSPECTION) || productionOrder.getStatus().equals(Kizuna_core_service.productionOrder.domain.ProductionOrderStatus.FINISHED_BY_TIME)) {
             throw new BusinessException("Production order is already completed");
         }
+        if(productionOrder.getStatus() != (ProductionOrderStatus.PLANNED)){
+            throw new BusinessException("Production order is not planned");
+        }
         productionOrder.setStatus(ProductionOrderStatus.CANCELLED);
         productionOrder.setEndTime(LocalDateTime.now());
         productionOrderRepository.save(productionOrder);
         reorderQueue();
-        publisher.sendEvent(productionOrder.getId(), productionOrder.getRecipe().getName(), "CANCELLED");
+        eventPublisher.publish(EventTopics.PRODUCTION_ORDER, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("recipeName", productionOrder.getRecipe().getName(), "status", "CANCELLED"));
+        eventPublisher.publish(EventTopics.AUDIT, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("action", "CANCELLED", "recipeName", productionOrder.getRecipe().getName()));
+        eventPublisher.publish(EventTopics.NOTIFICATION, "NOTIFICATION", productionOrder.getCreatedBy(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("eventType", "event.production.cancelled", "userId", productionOrder.getOperatorId(), "title", "Ordem de Produção Cancelada", "message", "A ordem de produção foi cancelada: " + productionOrder.getRecipe().getName()));
         return productionOrderResponseDto(productionOrder);
     }
     public void moveOrder(Long id, int newPosition) {
@@ -173,82 +237,42 @@ public class ProductionOrderService {
                 .orElseThrow(() -> new NotFoundException("Order not found"));
 
         queue.remove(order);
-        queue.add(newPosition - 1, order);
+
+        int targetIndex=Math.max(0, newPosition -1);
+
+        if(targetIndex > queue.size()){
+            targetIndex = queue.size();
+        }
+
+        queue.add(targetIndex, order);
 
         for (int i = 0; i < queue.size(); i++) {
             queue.get(i).setQueuePosition(i + 1);
         }
 
         productionOrderRepository.saveAll(queue);
+        eventPublisher.publish(EventTopics.AUDIT, "PRODUCTION_ORDER", id.toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("action", "REORDER", "recipeName", order.getRecipe().getName()));
     }
 
-
-
-
-
-    public Long calculateRemainingTime(ProductionOrder order) {
-        if (order.getStartTime() == null) {
-            return order.getEstimatedTotalTime();
-        }
-        long elapsed = Duration.between(order.getStartTime(), LocalDateTime.now()).toMinutes();
-        long remaing = order.getEstimatedTotalTime() - elapsed;
-        return Math.max(0, remaing);
-
-    }
-
-    public Double calculateProgress(ProductionOrder order) {
-        if (order.getStartTime() == null) {
-            return 0.0;
-        }
-        if(order.getStatus().equals(ProductionOrderStatus.CANCELLED)){
-            return 0.0;
-        }
-        long total = order.getEstimatedTotalTime();
-        long elapsed = Duration.between(order.getStartTime(), LocalDateTime.now()).toMinutes();
-        double progress = ((double) elapsed / total) * 100;
-        return Math.min(progress, 100.0);
-    }
-
-    public LocalDateTime calculateETA(ProductionOrder order) {
-        if (order.getStartTime() == null) {
-            return null;
-        }
-        return order.getStartTime().plusMinutes(order.getEstimatedTotalTime());
-    }
-
-    public ProductionOrderStatus calculateStatus(ProductionOrder order) {
-        if (order.getStatus() == ProductionOrderStatus.WAITING_INSPECTION ||
-                order.getStatus() == ProductionOrderStatus.CANCELLED ||
-                order.getStatus() == ProductionOrderStatus.FINISHED_BY_TIME) {
-            return order.getStatus();
-        }
-
-        if (order.getStartTime() == null) {
-            return ProductionOrderStatus.PLANNED;
-        }
-
-        long elapsed = Duration.between(order.getStartTime(), LocalDateTime.now()).toMinutes();
-
-        if (elapsed >= order.getEstimatedTotalTime()) {
-            return ProductionOrderStatus.FINISHED_BY_TIME;
-        }
-
-        return ProductionOrderStatus.IN_PROGRESS;
-    }
     @Transactional
-    public void autoFinishByTime() {
+    public ApiResponseGeneric autoFinishByTime() {
         List<ProductionOrder> orders = productionOrderRepository
                 .findByStatus(ProductionOrderStatus.IN_PROGRESS);
 
         for (ProductionOrder order : orders) {
+            if (order.getEstimatedTotalTime() == null) continue;
             long elapsed = Duration.between(order.getStartTime(), LocalDateTime.now()).toMinutes();
 
             if (elapsed >= order.getEstimatedTotalTime()) {
                 order.setStatus(ProductionOrderStatus.FINISHED_BY_TIME);
                 order.setEndTime(LocalDateTime.now());
                 productionOrderRepository.save(order);
+                eventPublisher.publish(EventTopics.AUDIT, "PRODUCTION_ORDER", order.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("action", "FINISHED_BY_TIME", "recipeName", order.getRecipe().getName()));
+                eventPublisher.publish(EventTopics.NOTIFICATION, "NOTIFICATION", order.getCreatedBy(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("eventType", "event.production.finished_by_time", "userId", order.getCreatedBy(), "title", "Ordem de Produção Finalizada", "message", "A ordem de produção foi finalizada: " + order.getRecipe().getName()));
+                eventPublisher.publish(EventTopics.NOTIFICATION, "NOTIFICATION", order.getOperatorId(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("eventType", "event.production.finished_by_time", "title", "Ordem de Produção Aguardando inspeção", "message", "A ordem de produção foi finalizada: " + order.getRecipe().getName(),"targetRole", "INSPECTOR"));
             }
         }
+        return new ApiResponseGeneric("Production orders finished by time",LocalDateTime.now());
     }
 
     @Transactional
@@ -263,6 +287,7 @@ public class ProductionOrderService {
             orders.get(i).setQueuePosition(i+1);
         }
         productionOrderRepository.saveAll(orders);
+        eventPublisher.publish(EventTopics.AUDIT, "PRODUCTION_ORDER", orders.get(0).getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("action", "REORDER", "queueSize", orders.size()));
 
     }
 
@@ -271,10 +296,10 @@ public class ProductionOrderService {
                 .quantityToProduce(productionOrder.getQuantityToProduce())
                 .startTime(productionOrder.getStartTime())
                 .createdBy(SecurityUtils.getUsername())
-                .calculatedStatus(calculateStatus(productionOrder)).status(productionOrder.getStatus())
-                .progress(calculateProgress(productionOrder))
-                .eta(calculateETA(productionOrder))
-                .remainingTime(calculateRemainingTime(productionOrder))
+                .calculatedStatus(productionOrderCalculate.calculateStatus(productionOrder)).status(productionOrder.getStatus())
+                .progress(productionOrderCalculate.calculateProgress(productionOrder))
+                .eta(productionOrderCalculate.calculateETA(productionOrder))
+                .remainingTime(productionOrderCalculate.calculateRemainingTime(productionOrder))
                 .priority(productionOrder.getPriority())
                 .queuePosition(productionOrder.getQueuePosition())
                 .estimatedTotalTime(productionOrder.getEstimatedTotalTime())
@@ -285,6 +310,10 @@ public class ProductionOrderService {
                 .operatorName(productionOrder.getOperatorName())
                 .build();
 
+    }
+
+    private ApiResponseGeneric apiResponseGeneric(String message){
+        return new ApiResponseGeneric(message, LocalDateTime.now());
     }
 
 }
