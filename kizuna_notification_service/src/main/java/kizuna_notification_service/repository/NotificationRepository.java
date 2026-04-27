@@ -7,5 +7,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface NotificationRepository extends MongoRepository<Notification, String> {
-    List<Notification> findByUserIdAndIsReadFalseOrderByTimestampDesc(String userId);
+    List<Notification> findByUserId(String userId);
+    Optional <Notification> findByIdAndUserId(String notificationId, String userId);
 }

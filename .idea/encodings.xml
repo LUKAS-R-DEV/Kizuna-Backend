@@ -3,6 +3,7 @@
   <component name="Encoding">
     <file url="file://$PROJECT_DIR$/Kizuna-core-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/KizunaCore/Kizuna-core-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/kizuna-ai-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/kizuna-audit-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/kizuna-data-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/kizuna-iam-service/src/main/java" charset="UTF-8" />

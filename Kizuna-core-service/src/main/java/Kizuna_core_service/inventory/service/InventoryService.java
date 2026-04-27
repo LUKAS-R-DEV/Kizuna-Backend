@@ -63,7 +63,7 @@ public class InventoryService {
         inventory.updateStatus();
         inventoryRepository.save(inventory);
         eventPublisher.publish(EventTopics.INVENTORY_CREATED, "INVENTORY", inventory.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("inventoryName", inventory.getName(), "action", "CREATE", "quantity", inventory.getQuantity(),"status",inventory.getStatus().name()));
-        eventPublisher.publish(EventTopics.AUDIT, "INVENTORY", inventory.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("action", "CREATE", "inventoryId", inventory.getId(), "quantity", inventory.getQuantity()));
+        eventPublisher.publish(EventTopics.AUDIT,"INVENTORY", inventory.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("action", "CREATE", "inventoryId", inventory.getId(), "quantity", inventory.getQuantity()));
         return toResponseDto(inventory);
     }
 

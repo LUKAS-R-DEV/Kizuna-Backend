@@ -14,10 +14,10 @@ public record InventoryRequestDto(
         @NotBlank(message = "location is required")
         String location,
         @NotNull(message = "quantity is required")
-        @Min(value = 0, message = "quantity must be positive or zero")
+        @PositiveOrZero(message = "quantity must be positive or zero")
         Double quantity,
         @NotNull(message = "minStock is required")
-        @Min(value = 0, message = "quantity must be positive or zero")
+        @PositiveOrZero(message = "minStock must be positive or zero")
         Double minStock,
         @NotNull(message = "type is required")
         Type type,

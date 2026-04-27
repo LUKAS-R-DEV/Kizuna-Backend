@@ -88,10 +88,9 @@ public class ProductionOrderService {
         productionOrderRepository.save(productionOrder);
         reorderQueue();
 
-        eventPublisher.publish(EventTopics.PRODUCTION_CREATED, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("recipeName", productionOrder.getRecipe().getName(), "status", "PLANNED"));
+        eventPublisher.publish(EventTopics.PRODUCTION_CREATED, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("recipeName", productionOrder.getRecipe().getName(), "status", "PLANNED","quantity",productionOrder.getQuantityToProduce()));
         eventPublisher.publish(EventTopics.AUDIT, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("action", "CREATE", "recipeName", recipe.getName()));
 
-        // 🔔 NOTIFICA O OPERADOR
         eventPublisher.publish(EventTopics.NOTIFICATION, "NOTIFICATION", productionOrder.getOperatorId(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("eventType", "event.production.created", "userId", productionOrder.getOperatorId(), "title", "Nova Ordem de Produção", "message", "Você foi designado para produzir: " + recipe.getName()));
 
         return productionOrderResponseDto(productionOrder);
@@ -136,7 +135,7 @@ public class ProductionOrderService {
         }
         productionOrderRepository.save(productionOrder);
         reorderQueue();
-        eventPublisher.publish(EventTopics.PRODUCTION_STARTED, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("recipeName", productionOrder.getRecipe().getName(), "status", "START"));
+        eventPublisher.publish(EventTopics.PRODUCTION_STARTED, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("recipeName", productionOrder.getRecipe().getName(), "status", "START", "quantity", productionOrder.getQuantityToProduce()));
         eventPublisher.publish(EventTopics.AUDIT, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("action", "START", "recipeName", recipe.getName()));
         eventPublisher.publish(EventTopics.NOTIFICATION, "NOTIFICATION", productionOrder.getOperatorId(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("eventType", "event.production.started",  "title", "Ordem de Produção Iniciada", "message", "A ordem de produção foi iniciada: " + productionOrder.getRecipe().getName(),"targetRole", "PLANNER"));
         return productionOrderResponseDto(productionOrder);
@@ -156,7 +155,7 @@ public class ProductionOrderService {
         productionOrder.setStatus(ProductionOrderStatus.PAUSED);
         productionOrderRepository.save(productionOrder);
         reorderQueue();
-        eventPublisher.publish(EventTopics.PRODUCTION_PAUSED, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("recipeName", productionOrder.getRecipe().getName(), "status", "PAUSED"));
+        eventPublisher.publish(EventTopics.PRODUCTION_PAUSED, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("recipeName", productionOrder.getRecipe().getName(), "status", "PAUSED", "quantity", productionOrder.getQuantityToProduce()));
         eventPublisher.publish(EventTopics.AUDIT, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("action", "PAUSE", "recipeName", productionOrder.getRecipe().getName()));
         eventPublisher.publish(EventTopics.NOTIFICATION, "NOTIFICATION", productionOrder.getOperatorId(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("eventType", "event.production.paused",  "title", "Ordem de Produção Pausada", "message", "A ordem de produção foi pausada: " + productionOrder.getRecipe().getName(),"targetRole", "PLANNER"));
         return new ApiResponseGeneric("Production order paused successfully",LocalDateTime.now());
@@ -183,7 +182,7 @@ public class ProductionOrderService {
 
         productionOrderRepository.save(productionOrder);
         reorderQueue();
-        eventPublisher.publish(EventTopics.PRODUCTION_REWORK, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("recipeName", productionOrder.getRecipe().getName(), "status", "REWORK"));
+        eventPublisher.publish(EventTopics.PRODUCTION_REWORK, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("recipeName", productionOrder.getRecipe().getName(), "status", "REWORK", "quantity", productionOrder.getQuantityToProduce()));
         eventPublisher.publish(EventTopics.AUDIT, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("action", "REWORK", "recipeName", productionOrder.getRecipe().getName()));
         eventPublisher.publish(EventTopics.NOTIFICATION, "NOTIFICATION", productionOrder.getOperatorId(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("eventType", "event.production.rework", "title", "Ordem de Produção Reexecutada", "message", "A ordem de produção foi reexecutada: " + productionOrder.getRecipe().getName(),"targetRole", "PLANNER"));
 
@@ -199,7 +198,7 @@ public class ProductionOrderService {
         productionOrder.setStatus(ProductionOrderStatus.WAITING_INSPECTION);
         productionOrder.setEndTime(LocalDateTime.now());
         productionOrderRepository.save(productionOrder);
-        eventPublisher.publish(EventTopics.PRODUCTION_FINISHED, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("recipeName", productionOrder.getRecipe().getName(), "status", "FINISH"));
+        eventPublisher.publish(EventTopics.PRODUCTION_FINISHED, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("recipeName", productionOrder.getRecipe().getName(), "status", "FINISH", "quantity", productionOrder.getQuantityToProduce()));
         eventPublisher.publish(EventTopics.AUDIT, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("action", "FINISH", "recipeName", productionOrder.getRecipe().getName()));
         eventPublisher.publish(EventTopics.NOTIFICATION, "NOTIFICATION", productionOrder.getOperatorId(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("eventType", "event.production.finished", "title", "Ordem de Produção Finalizada", "message", "A ordem de produção foi finalizada: " + productionOrder.getRecipe().getName(),"targetRole", "PLANNER"));
         eventPublisher.publish(EventTopics.NOTIFICATION, "NOTIFICATION", productionOrder.getCreatedBy(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("eventType", "event.production.finished","title", "Ordem de Produção Aguardando inspeção", "message", "A ordem de produção foi finalizada: " + productionOrder.getRecipe().getName(),"targetRole", "INSPECTOR"));
@@ -219,7 +218,7 @@ public class ProductionOrderService {
         productionOrder.setEndTime(LocalDateTime.now());
         productionOrderRepository.save(productionOrder);
         reorderQueue();
-        eventPublisher.publish(EventTopics.PRODUCTION_ORDER, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("recipeName", productionOrder.getRecipe().getName(), "status", "CANCELLED"));
+        eventPublisher.publish(EventTopics.PRODUCTION_ORDER, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("recipeName", productionOrder.getRecipe().getName(), "status", "CANCELLED", "quantity", productionOrder.getQuantityToProduce()));
         eventPublisher.publish(EventTopics.AUDIT, "PRODUCTION_ORDER", productionOrder.getId().toString(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("action", "CANCELLED", "recipeName", productionOrder.getRecipe().getName()));
         eventPublisher.publish(EventTopics.NOTIFICATION, "NOTIFICATION", productionOrder.getCreatedBy(), SecurityUtils.getUserId(), SecurityUtils.getUsername(), Map.of("eventType", "event.production.cancelled", "userId", productionOrder.getOperatorId(), "title", "Ordem de Produção Cancelada", "message", "A ordem de produção foi cancelada: " + productionOrder.getRecipe().getName()));
         return productionOrderResponseDto(productionOrder);

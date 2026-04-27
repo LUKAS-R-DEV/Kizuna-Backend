@@ -40,12 +40,6 @@ public class InventoryMovement {
         updatedAt = LocalDateTime.now();
     }
 
-    public InventoryMovement(Inventory inventory, Double quantity, String reason,MovementType type) {
-        this.inventory = inventory;
-        this.quantity = quantity;
-        this.reason = reason;
-        this.createdAt = LocalDateTime.now();
-        this.type = type;
-    }
+
 }
 

@@ -51,7 +51,7 @@ public class InventoryMovementService {
                     build();
 
             InventoryMovement savedMovement = inventoryMovementRepository.save(inventoryMovement);
-            eventPublisher.publish(EventTopics.AUDIT,"INVENTORY_MOVEMENT",savedMovement.getId().toString(),SecurityUtils.getUserId(),SecurityUtils.getUsername(),Map.of("inventoryId", inventory.getId(), "movementType", type.name(), "quantity", quantity));
+            eventPublisher.publish(EventTopics.AUDIT,"INVENTORY_MOVEMENT",savedMovement.getId().toString(),SecurityUtils.getUserId(),SecurityUtils.getUsername(),Map.of("action", "MOVEMENT", "inventoryId", inventory.getId(), "movementType", type.name(), "quantity", quantity));
             eventPublisher.publish(EventTopics.INVENTORY_MOVEMENT,"INVENTORY_MOVEMENT",savedMovement.getId().toString(),SecurityUtils.getUserId(),SecurityUtils.getUsername(),Map.of("inventoryId", inventory.getId(), "movementType", type.name(), "quantity", quantity));
 
         }
