@@ -20,9 +20,6 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.44/lombok-1.18.44.jar" />
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.44/lombok-1.18.44.jar" />
         </processorPath>
-        <module name="kizuna-audit-service" />
-        <module name="kizuna_notification_service" />
-        <module name="kizuna-data-service" />
         <module name="kizuna-iam-service" />
       </profile>
       <profile name="Annotation profile for ai-service" enabled="true">
@@ -33,6 +30,17 @@
           <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.46/lombok-1.18.46.jar" />
         </processorPath>
         <module name="ai-service" />
+      </profile>
+      <profile name="Annotation profile for kizuna_notification_service" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.44/lombok-1.18.44.jar" />
+        </processorPath>
+        <module name="kizuna-audit-service" />
+        <module name="kizuna-data-service" />
+        <module name="kizuna_notification_service" />
       </profile>
     </annotationProcessing>
   </component>

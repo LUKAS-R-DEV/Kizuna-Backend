@@ -14,3 +14,14 @@ spring:
     port: 5672
     username: guest
     password: guest
+
+
+    management:
+      endpoints:
+        web:
+          exposure:
+            include: "public/health"
+
+      endpoint:
+        health:
+          show-details: "always"

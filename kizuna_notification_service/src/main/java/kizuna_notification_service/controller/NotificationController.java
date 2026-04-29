@@ -27,12 +27,8 @@ public class NotificationController {
 
     @GetMapping("/{notificationId}")
     public ResponseEntity<NotificationResponseDto> findById(@PathVariable String notificationId,@AuthenticationPrincipal Jwt jwt){
-        try{
-            String userId=jwt.getSubject();
-            return ResponseEntity.ok(notificationService.findById(notificationId, userId));
-        } catch (RuntimeException e) {
-            throw new RuntimeException(e);
-        }
+        String userId=jwt.getSubject();
+        return ResponseEntity.ok(notificationService.findById(notificationId, userId));
     }
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponseGeneric> delete(@PathVariable String id, @AuthenticationPrincipal Jwt jwt) {

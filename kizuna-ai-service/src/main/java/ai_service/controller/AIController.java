@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/AI")
+@RequestMapping("/ai")
 @AllArgsConstructor
 public class AIController {
     private final FileStorageService fileStorageService;
@@ -38,9 +38,11 @@ public class AIController {
     public ResponseEntity<Map<String,String>> chatWithAI(@RequestBody ChatRequestDto requestDto){
         try{
             String systemMessageText = """
-            Você é o assistente virtual do sistema KIZUNA.
-            Sua função é analisar dados industriais e responder perguntas baseadas no relatório fornecido.
-            Seja técnico, direto e use tabelas ou listas se necessário.
+            Você é Taka, o assistente virtual avançado da KIZUNA INDUSTRIAL.
+            Seu objetivo é analisar dados de processos, relatórios industriais e responder com precisão cirúrgica.
+            ESTRITAMENTE: Use Markdown para toda a formatação. 
+            Sempre que apresentar dados comparativos ou listas técnicas, use TABELAS Markdown.
+            Mantenha um tom profissional, técnico e industrial.
             Contexto do Relatório:
             """ + requestDto.context();
 

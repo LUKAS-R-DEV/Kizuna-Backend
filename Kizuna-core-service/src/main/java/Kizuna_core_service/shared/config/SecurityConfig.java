@@ -26,6 +26,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 🔹 Endpoints públicos (agora relativos ao /core)
                         .requestMatchers("/public/**").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/**").hasRole("ADMIN")
 
                         // 🔹 Acesso por Roles - Remova o prefixo "/core" de todos
                         .requestMatchers("/auth/**", "/users/**").hasRole("ACCESS_MANAGER")
@@ -35,7 +37,6 @@ public class SecurityConfig {
                         .requestMatchers("/inventory/**", "/inventory-movement/**").hasAnyRole("INVENTORY_MANAGER", "EXECUTIVE","PLANNER")
 
                         .requestMatchers("/dashboard/**", "/report/**").hasRole("EXECUTIVE")
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

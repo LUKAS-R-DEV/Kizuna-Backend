@@ -43,3 +43,14 @@ spring:
         instances:
           iamService:
             timeoutDuration: 3s
+
+
+  management:
+    endpoints:
+      web:
+        exposure:
+          include: "health"
+
+    endpoint:
+      health:
+        show-details: "always"

@@ -17,6 +17,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable()) // Desabilita CSRF para API stateless
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/actuator/health").permitAll()
                         .anyRequest().authenticated() // Protege todos os endpoints
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
